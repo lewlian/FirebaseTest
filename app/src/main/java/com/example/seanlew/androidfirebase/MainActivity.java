@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     DatabaseReference mRootDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
     //TODO 10.6 Get a reference to the root note of the firebase storage
-    StorageReference storageReference;
+    StorageReference storageReference = FirebaseStorage.getInstance().getReference();
 
     DatabaseReference databaseReferencePart1;
     DatabaseReference databaseReferencePart2;
@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     String CHILD_NODE_PART1 = "Part1";
     String CHILD_NODE_PART2 = "Part2";
 
-    String SAMPLE_NODE  = "Pokemon";
+    String SAMPLE_NODE  = "pokemon";
     TextView textViewSampleNodeValue;
 
 
@@ -70,18 +70,19 @@ public class MainActivity extends AppCompatActivity {
         //TODO 10.0 Example
         textViewSampleNodeValue = findViewById(R.id.textViewSampleNodeValue);
         databaseReferenceSampleNodeValue = mRootDatabaseRef.child(SAMPLE_NODE);
-        databaseReferenceSampleNodeValue.setValue("Psyduck");
+        databaseReferenceSampleNodeValue.setValue("List of Pokemons:");
 
+        //listen for changes and updating user interface.
         databaseReferenceSampleNodeValue.addListenerForSingleValueEvent(
                 new ValueEventListener() {
                     @Override
+                    //listen for changes, the entire set of data is passed to data snapshot
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        textViewSampleNodeValue.setText((String) dataSnapshot.getValue());
+                        String text = dataSnapshot.getKey() + ":" +dataSnapshot.getValue();
+                        textViewSampleNodeValue.setText(text);
                     }
-
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
-
                     }
                 }
         );
@@ -92,10 +93,14 @@ public class MainActivity extends AppCompatActivity {
         randomStrings.add("Pikachu");
         randomStrings.add("Snorlax");
         randomStrings.add("Charmander");
+        randomStrings.add("Ekans");
+        randomStrings.add("Squirtle");
+        randomStrings.add("Bulbasaur");
 
 
 
         //TODO 10.3 get a reference to the child node
+        //Just adding a new node will not show anything on the database
         databaseReferencePart1=mRootDatabaseRef.child(CHILD_NODE_PART1);
 
 
@@ -106,16 +111,21 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Random random = new Random();
                 int position = random.nextInt(randomStrings.size());
-                databaseReferencePart1.push().setValue((randomStrings.get(position)));
+                String oneString = randomStrings.get(position);
+                //ask Firebase to decide the key for you randomly generating a string.
+                databaseReferencePart1.push().setValue(oneString);
+                //If you only want to have one key and keep updating it
+                //DatabaseReference d = databaseReferencePart1.child("RandomPokemon");
+               // d.setValue(oneString);
             }
         });
 
 
         //TODO 10.8 Build a HashMap object with your data
         final Map<String, ImageData> imageDataMap = new HashMap<>();
-        imageDataMap.put("Miku", new ImageData("hatsunemiku","vocaloid"));
-        imageDataMap.put("Pikachu", new ImageData("pikachu","pokemon"));
-        imageDataMap.put("Totoro", new ImageData("totoro", "studio ghibli"));
+        imageDataMap.put("Miku", new ImageData("hatsunemiku","Vocaloid"));
+        imageDataMap.put("Pikachu", new ImageData("pikachu","Pokemon"));
+        imageDataMap.put("Yoda", new ImageData("yoda", "Star Wars"));
 
         //TODO 10.9 Get reference to the root of the child node part 2
         databaseReferencePart2 = mRootDatabaseRef.child(CHILD_NODE_PART2);
@@ -129,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 databaseReferencePart2.setValue(imageDataMap);
                 for (String key: imageDataMap.keySet()){
                     ImageData imageData = imageDataMap.get(key);
+                    //Path that will be stored on the firebase storage.
                     String path = "images/" + imageData.filename +".jpg";
                     uploadFileToFirebaseStorage(imageData.filename,path);
 
@@ -141,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
 
         //TODO 10.12 Get a reference to the widgets and write code to download an image randomly when the Get Picture button is clicked
 
-        buttonPart2GetPicture = findViewById(R.id.buttonPart2AddPicture);
+        buttonPart2GetPicture = findViewById(R.id.buttonPart2GetPicture);
         imageViewPart2 = findViewById(R.id.imageViewPart2);
 
         buttonPart2GetPicture.setOnClickListener(new View.OnClickListener(){
@@ -183,15 +194,19 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         //TODO 10.5 invoke addValueEventListener on databaseReferencePart1
         databaseReferencePart1.addValueEventListener(new ValueEventListener() {
+            //Gets an update onto the user interface everytime there is a change to it.
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 LinearLayout linearLayout = findViewById(R.id.linearLayoutPart1);
+                //remove all the textviews previously added and then re-add the existing ones again
                 linearLayout.removeAllViews();
+                //Iterating through every children of the node
                 for(DataSnapshot ds : dataSnapshot.getChildren()){
                     Log.i(TAG,ds.getKey());
                     Log.i(TAG, (String) ds.getValue());
                     TextView textView = new TextView(MainActivity.this);
                     textView.setText((String) ds.getValue());
+                    //Add a new textview widget to the linearlayout
                     linearLayout.addView(textView);
                 }
             }
